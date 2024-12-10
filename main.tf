@@ -37,11 +37,40 @@ locals {
 resource "google_artifact_registry_repository" "repositories" {
   for_each = var.repositories
 
-  project       = var.project_id
-  repository_id = each.key
-  location      = each.value.location != "" ? each.value.location : var.default_location
-  format        = each.value.format
-  description   = each.value.description
+  project                = var.project_id
+  repository_id          = each.key
+  location               = each.value.location != "" ? each.value.location : var.default_location
+  format                 = each.value.format
+  description            = each.value.description
+  cleanup_policy_dry_run = each.value.cleanup_policy_dry_run
+
+  dynamic "cleanup_policies" {
+    for_each = each.value.cleanup_policies != null ? each.value.cleanup_policies : {}
+
+    content {
+      id     = cleanup_policies.key
+      action = cleanup_policies.value.action
+      
+      dynamic "most_recent_versions" {
+        for_each = lookup(cleanup_policies.value, "most_recent_versions", {}) != {} ? [cleanup_policies.value.most_recent_versions] : []
+
+        content {
+          package_name_prefixes = most_recent_versions[0].package_name_prefixes
+          keep_count            = most_recent_versions[0].keep_count
+        }
+      }
+
+      dynamic "condition" {
+        for_each = lookup(cleanup_policies.value, "condition", {}) != {} ? [cleanup_policies.value.condition] : []
+        
+        content {
+          older_than   = lookup(condition.value, "older_than", null)
+          tag_state    = lookup(condition.value, "tag_state", null)
+          tag_prefixes = lookup(condition.value, "tag_prefixes", null)
+        }
+      }
+    }
+  }
 }
 
 resource "google_artifact_registry_repository_iam_member" "member" {
