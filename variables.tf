@@ -19,11 +19,12 @@ variable "default_location" {
 # Artifact Registry repositories.
 variable "repositories" {
   type = map(object({
-    description = string
-    format      = optional(string, "DOCKER")
-    readers     = optional(list(string), [])
-    writers     = optional(list(string), [])
-    location    = optional(string, "")
+    description            = string
+    format                 = optional(string, "DOCKER")
+    readers                = optional(list(string), [])
+    writers                = optional(list(string), [])
+    location               = optional(string, "")
+    cleanup_policy_dry_run = optional(bool, false)
   }))
   description = "List of Artifact Registry repositories to create."
 }
